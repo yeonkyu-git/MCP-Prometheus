@@ -216,3 +216,5 @@ PROM_MAX_PARALLEL_CHECKS=6
 - 디스크 사용률 체크는 `instance` 또는 `server_name`으로 대상을 제한하세요.
 - `disk_used_pct_by_mount` 값은 0~100 스케일입니다.  
   예: `0.8`은 `80%`가 아니라 `0.8%`입니다.
+
+---
