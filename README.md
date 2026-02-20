@@ -27,6 +27,7 @@ mcp_prometheus/
     prom_client.py
   tools/
     catalog.py
+    alerts_runner.py
     checks_runner.py
     promql.py
   utils/
@@ -42,6 +43,7 @@ mcp_prometheus/
 | `list_environments` | 환경별 Prometheus URL 조회 | `prod/dev_test/dr` |
 | `list_servers` | 최근 up 기준 서버 목록 조회 | `(instance, job)` 기준 중복 제거 |
 | `list_process_groups` | 프로세스 그룹 목록 조회 | `process_monitoring` 기준 |
+| `get_alerts` | Prometheus 활성 Alert 조회 | `/api/v1/alerts` 기반, 라벨/상태 필터 지원 |
 | `run_check` | 단일 체크 실행 | 기본 권장 |
 | `run_all_checks` | 전체 체크 병렬 실행 | `step=5m` 고정 |
 | `run_promql` | 사용자 PromQL 직접 실행 | `approved=True` 필요 |

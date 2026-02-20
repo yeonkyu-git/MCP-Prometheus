@@ -5,6 +5,8 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional, Tuple
 
 _STEP_RE = re.compile(r"^\d+[smhd]$")
+_ISO_FRACTION_RE = re.compile(r"(?P<prefix>\.\d{6})\d+")
+JAKARTA_TZ = timezone(timedelta(hours=7))
 
 
 def iso(dt: datetime) -> str:
@@ -38,11 +40,25 @@ def step_to_seconds(step: str) -> int:
 
 
 def parse_iso_utc(value: str) -> datetime:
-    s = value.strip().replace("Z", "+00:00")
+    s = value.strip()
+    # Python's datetime supports up to microseconds (6 digits). Some Prometheus
+    # timestamps can carry nanoseconds; truncate beyond 6 digits.
+    s = _ISO_FRACTION_RE.sub(r"\g<prefix>", s)
+    s = s.replace("Z", "+00:00")
     dt = datetime.fromisoformat(s)
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
     return dt.astimezone(timezone.utc)
+
+
+def to_jakarta(dt: datetime) -> datetime:
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(JAKARTA_TZ)
+
+
+def iso_jakarta(dt: datetime) -> str:
+    return to_jakarta(dt).isoformat(timespec="seconds")
 
 
 def format_range(td: timedelta) -> str:

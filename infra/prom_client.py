@@ -81,3 +81,16 @@ def prom_label_values(prom_url: str, label: str, match: Optional[str] = None) ->
     if data.get("status") != "success":
         raise RuntimeError(f"Prometheus error: {data}")
     return data.get("data", [])
+
+
+def prom_alerts(prom_url: str) -> Dict[str, Any]:
+    if not prom_url:
+        raise ValueError("prom_url is empty")
+
+    url = f"{prom_url.rstrip('/')}/api/v1/alerts"
+    r = _session.get(url, headers=_prom_headers(), timeout=HTTP_TIMEOUT_SEC)
+    r.raise_for_status()
+    data = r.json()
+    if data.get("status") != "success":
+        raise RuntimeError(f"Prometheus error: {data}")
+    return data
