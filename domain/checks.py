@@ -22,8 +22,8 @@ CHECKS: Dict[str, Check] = {
     ),
     "cpu_peak_pct": Check(
         id="cpu_peak_pct",
-        name="CPU Peak Usage (%)",
-        description="Window peak CPU usage over selected range.",
+        name="CPU Max Over Selected Range (%)",
+        description="Maximum 5-minute CPU usage found within the selected time range. Use raw CPU series to identify the exact occurrence time.",
         promql='max_over_time((100 - (avg by (instance,server_name) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100))[{range}:])',
     ),
     "mem_used_pct": Check(
@@ -177,3 +177,4 @@ CHECKS: Dict[str, Check] = {
         promql='sum by (instance,server_name,datname) (pg_stat_activity_count{state="active",job=~"PROD DB PostgreSQL|TEST DB PostgreSQL|DEV DB PostgreSQL"})',
     ),
 }
+
