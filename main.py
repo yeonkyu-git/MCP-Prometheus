@@ -6,6 +6,7 @@ from core.server import mcp
 from tools import catalog as _catalog  # noqa: F401
 from tools import alerts_runner as _alerts_runner  # noqa: F401
 from tools import checks_runner as _checks_runner  # noqa: F401
+from tools import loki_query as _loki_query  # noqa: F401
 from tools import promql as _promql  # noqa: F401
 
 

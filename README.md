@@ -1,6 +1,6 @@
-﻿# MCP Prometheus 📈
+﻿# MCP Prometheus + Loki 📈
 
-Prometheus 기반 모니터링용 MCP 서버입니다.
+Prometheus + Loki 기반 모니터링용 MCP 서버입니다.
 엔트리포인트는 `main.py`입니다.
 
 ## Quick Start 🚀
@@ -24,11 +24,13 @@ mcp_prometheus/
   domain/
     checks.py
   infra/
+    loki_client.py
     prom_client.py
   tools/
     catalog.py
     alerts_runner.py
     checks_runner.py
+    loki_query.py
     promql.py
   utils/
     query_utils.py
@@ -43,10 +45,55 @@ mcp_prometheus/
 | `list_environments` | 환경별 Prometheus URL 조회 | `prod/dev_test/dr` |
 | `list_servers` | 최근 up 기준 서버 목록 조회 | `(instance, job)` 기준 중복 제거 |
 | `list_process_groups` | 프로세스 그룹 목록 조회 | `process_monitoring` 기준 |
+| `list_loki_environments` | 환경별 Loki URL 조회 | `prod/dev_test` |
+| `list_loki_hosts` | 최근 로그 기준 host 후보 조회 | 기본 최근 1시간 |
+| `list_loki_apps` | 최근 로그 기준 app 후보 조회 | 기본 최근 1시간 |
+| `find_logs` | 구조화된 Loki 로그 조회 | `loki_environment`, `log_env`, `host`, `app` 필요 |
 | `get_alerts` | Prometheus 활성 Alert 조회 | `/api/v1/alerts` 기반, 라벨/상태 필터 지원 |
 | `run_check` | 단일 체크 실행 | 기본 권장 |
 | `run_all_checks` | 전체 체크 병렬 실행 | `step=5m` 고정 |
 | `run_promql` | 사용자 PromQL 직접 실행 | `approved=True` 필요 |
+
+## Loki Tool 입력 가이드 🪵
+
+### 환경 구분
+
+- `loki_environment`: 어떤 Loki 서버로 붙을지 선택 (`prod`, `dev_test`)
+- `log_env`: Loki 로그 라벨 `env` 값 (`prod`, `DEV`, `TEST`)
+
+이 둘은 같은 의미가 아닙니다.
+예를 들어 `dev_test` Loki 서버 안에 `DEV`와 `TEST` 로그가 함께 있을 수 있으므로, `find_logs` 호출 시 `log_env`는 명시적으로 넣어야 합니다.
+
+### Discovery Tool
+
+- `list_loki_hosts`
+- `list_loki_apps`
+
+공통 규칙:
+- 기본 기간은 최근 1시간
+- 절대 시간 조회 시 `start_time_utc_iso`, `end_time_utc_iso` 사용
+- 결과는 중복 제거된 후보 목록 반환
+
+### `find_logs`
+
+필수:
+- `loki_environment`
+- `log_env`
+- `host`
+- `app`
+
+선택:
+- 기간: `hours`, `minutes`, `days`
+- 절대 시간: `start_time_utc_iso`, `end_time_utc_iso`
+- 종료 오프셋: `end_offset_minutes`, `end_offset_hours`, `end_offset_days`
+- 필터: `contains`, `level`
+- 개수 제한: `limit`
+
+응답:
+- 생성된 LogQL
+- UTC 범위
+- `line_count`
+- `logs[]` (`timestamp`, `timestamp_jakarta`, `labels`, `line`)
 
 ## `run_check` 입력 가이드 🧭
 
@@ -110,6 +157,31 @@ mcp_prometheus/
 }
 ```
 
+### 4) Loki host 후보 조회
+
+```json
+{
+  "loki_environment": "dev_test",
+  "log_env": "DEV",
+  "app": "finast",
+  "hours": 1
+}
+```
+
+### 5) Loki 로그 조회
+
+```json
+{
+  "loki_environment": "prod",
+  "log_env": "prod",
+  "host": "cms-ap-01",
+  "app": "cms",
+  "hours": 1,
+  "contains": "timeout",
+  "limit": 200
+}
+```
+
 ## CHECKS Catalog ✅
 
 > Source: `domain/checks.py` (`CHECKS`)
@@ -161,6 +233,11 @@ PROM_URL=http://...:9090
 PROM_BEARER_TOKEN=
 PROM_TIMEOUT_SEC=15
 
+LOKI_ENV_URLS={"prod":"http://...:3100","dev_test":"http://...:3100"}
+LOKI_URL=http://...:3100
+LOKI_BEARER_TOKEN=
+LOKI_TIMEOUT_SEC=15
+
 ALERT_WARN_PCT=85
 ALERT_CRIT_PCT=95
 ALERT_SUSTAIN_MINUTES=5
@@ -174,8 +251,13 @@ PROM_MAX_PARALLEL_CHECKS=6
 2. `env_hint`
 3. `PROM_URL` fallback
 
+Loki 환경 선택 우선순위:
+1. `loki_environment`
+2. `LOKI_URL` fallback
+
 ## 운영 팁 💡
 
 - 리포트 출력 시 `%` 단위를 명확히 표기하세요.
 - 단일 서버 점검은 `instance` 또는 `server_name` 필터를 사용하세요.
 - `disk_used_pct_by_mount` 값은 0~100 스케일입니다. (`0.8` = `0.8%`)
+- Loki 조회 전에는 `list_loki_hosts` 또는 `list_loki_apps`로 후보값을 먼저 확인하는 편이 안전합니다.

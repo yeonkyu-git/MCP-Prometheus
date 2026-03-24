@@ -4,7 +4,14 @@ from datetime import datetime
 from typing import Optional, Tuple
 
 from domain.checks import Check
-from core.config import DEFAULT_PROM_URL, MAX_SAMPLES_PER_SERIES, normalize_env
+from core.config import (
+    DEFAULT_LOKI_URL,
+    DEFAULT_PROM_URL,
+    LOKI_ENV_URLS,
+    MAX_SAMPLES_PER_SERIES,
+    normalize_env,
+    normalize_loki_environment,
+)
 from core.server import ENV_URLS
 from core.time_utils import step_to_seconds
 
@@ -25,6 +32,19 @@ def resolve_prom_url(environment: Optional[str], env_hint: Optional[str]) -> Tup
         return "default", DEFAULT_PROM_URL
 
     raise ValueError("No environment selected and PROM_URL is not set")
+
+
+def resolve_loki_url(environment: Optional[str]) -> Tuple[str, str]:
+    if environment:
+        key = normalize_loki_environment(environment)
+        if key in LOKI_ENV_URLS:
+            return key, LOKI_ENV_URLS[key]
+        raise ValueError(f"Unknown Loki environment: {environment}")
+
+    if DEFAULT_LOKI_URL:
+        return "default", DEFAULT_LOKI_URL
+
+    raise ValueError("No environment selected and LOKI_URL is not set")
 
 
 def should_apply_alerts(c: Optional[Check]) -> bool:

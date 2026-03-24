@@ -1,7 +1,7 @@
 [project]
-name = "mcp-prometheus"
+name = "mcp-prometheus-loki"
 version = "0.1.0"
-description = "Add your description here"
+description = "Prometheus + Loki monitoring MCP server"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

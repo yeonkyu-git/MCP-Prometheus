@@ -14,5 +14,5 @@ _handler.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
 if not logger.handlers:
     logger.addHandler(_handler)
 
-mcp = FastMCP("prometheus-health-mcp")
+mcp = FastMCP("prometheus-loki-monitoring-mcp")
 ENV_URLS = load_env_urls(logger)
